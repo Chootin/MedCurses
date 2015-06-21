@@ -82,7 +82,7 @@ def getFiles(path):
 		for name in filenames:
 			filename = name
 			files.append(os.path.join(dirpath, filename))
-	return files
+	return sorted(files)
 
 def printFiles(files, window):
 	global _cursorPos
