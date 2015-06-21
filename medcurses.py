@@ -23,8 +23,6 @@ def main(stdscr):
 	_files = getFiles(_path)
 	_numFiles = len(_files)
 
-	refreshAll()
-
 	while _noExit:
 		printFiles(_files, _windows[1])
 		inputCheck(_windows[1])
@@ -99,16 +97,7 @@ def printFiles(files, window):
 			window.addstr(line, 0, file)
 		line += 1
 	# Refresh only the print window
-	window.noutrefresh()
-	curses.doupdate()
-
-def printStrings(strings, screen):
-	line = 0
-	screen.clear()
-	for string in strings:
-		screen.addstr(line, 0, string)
-		line += 1
-	screen.refresh()
+	refreshOne(window)
 
 def screenLayout():
 	global _windows
@@ -116,19 +105,30 @@ def screenLayout():
 	heightRemaining = curses.LINES
 
 	# Title bar
-	titlebar = curses.newwin(1, curses.COLS, 0, 0)
-	heightRemaining -= 1
+	title_x = 0
+	title_y = 0
+	title_h = 1
+	title = "MedCurses"
+
+	titlebar = curses.newwin(title_h, curses.COLS, title_y, title_x)
 
 	titlebar.bkgd(' ', curses.color_pair(1))
-	titlebar.addstr(0, center("MedCurses"), "MedCurses")
+	titlebar.addstr(0, center(title), title)
+
 	_windows.append(titlebar)
+	refreshOne(titlebar)
 
 	# File list
-	filelist = curses.newwin(heightRemaining - 1, curses.LINES, 2, 0)
-	heightRemaining = 0
+	filelist = curses.newwin(curses.LINES - title_h, curses.COLS, 2, 0)
 	filelist.keypad(True)
 	
 	_windows.append(filelist)
+
+	# Instructions
+	
+
+	# Directory Input
+	# TODO
 
 def center(string):
 	return (curses.COLS // 2) - (len(string) // 2)
@@ -137,5 +137,9 @@ def refreshAll():
 	global _windows
 	for window in _windows:
 		window.refresh()
+
+def refreshOne(window):
+	window.noutrefresh()
+	curses.doupdate()
 
 curses.wrapper(main)
