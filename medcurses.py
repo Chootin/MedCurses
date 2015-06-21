@@ -5,23 +5,29 @@ import os
 from subprocess import call
 from re import sub
 
-_path = "/home/pi/roms"
+_home = os.path.expanduser("~")
+_path = "{}/roms".format(_home)
 _files = []
 _numFiles = 0
 _cursorPos = 0
 _noExit = True
+_windows = []
 
 def main(stdscr):
 	global _files
 	global _numFiles
 	global _noExit
+
+	screenLayout()
 	
 	_files = getFiles(_path)
 	_numFiles = len(_files)
 
+	refreshAll()
+
 	while _noExit:
-		printScreen(_files, stdscr)
-		inputCheck(stdscr)
+		printFiles(_files, _windows[1])
+		inputCheck(_windows[1])
 
 def inputCheck(screen):
 	global _cursorPos
@@ -42,7 +48,8 @@ def inputCheck(screen):
 		_noExit = False
 
 def runMednafen():
-	xinitrc = "/home/pi/.xinitrc"
+	global _home
+	xinitrc = "{}/.xinitrc".format(_home)
 	newXinitrc = xinitrcString()
 
 	if os.path.isfile(xinitrc):
@@ -53,7 +60,8 @@ def runMednafen():
 	call("startx")
 
 def cleanup():
-	xinitrc = "/home/pi/.xinitrc"
+	global _home
+	xinitrc = "{}/.xinitrc".format(_home)
 	xinitrcBak = "{}.bak".format(xinitrc)
 
 	os.remove(xinitrc)
@@ -78,18 +86,21 @@ def getFiles(path):
 			files.append(os.path.join(dirpath, filename))
 	return files
 
-def printScreen(files, screen):
+def printFiles(files, window):
 	global _cursorPos
 
 	line = 0
-	screen.clear()
+	window.clear()
 	for file in files:
-		screen.addstr(line, 0, file)
 		if line == _cursorPos:
+			window.addstr(line, 0, file, curses.color_pair(1))
 			length = len(file)
-			screen.addstr(line, length, " <")
+		else:
+			window.addstr(line, 0, file)
 		line += 1
-	screen.refresh()
+	# Refresh only the print window
+	window.noutrefresh()
+	curses.doupdate()
 
 def printStrings(strings, screen):
 	line = 0
@@ -98,5 +109,33 @@ def printStrings(strings, screen):
 		screen.addstr(line, 0, string)
 		line += 1
 	screen.refresh()
+
+def screenLayout():
+	global _windows
+	curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
+	heightRemaining = curses.LINES
+
+	# Title bar
+	titlebar = curses.newwin(1, curses.COLS, 0, 0)
+	heightRemaining -= 1
+
+	titlebar.bkgd(' ', curses.color_pair(1))
+	titlebar.addstr(0, center("MedCurses"), "MedCurses")
+	_windows.append(titlebar)
+
+	# File list
+	filelist = curses.newwin(heightRemaining - 1, curses.LINES, 2, 0)
+	heightRemaining = 0
+	filelist.keypad(True)
+	
+	_windows.append(filelist)
+
+def center(string):
+	return (curses.COLS // 2) - (len(string) // 2)
+
+def refreshAll():
+	global _windows
+	for window in _windows:
+		window.refresh()
 
 curses.wrapper(main)
