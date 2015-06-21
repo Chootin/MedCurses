@@ -24,8 +24,8 @@ def main(stdscr):
 	_numFiles = len(_files)
 
 	while _noExit:
-		printFiles(_files, _windows[1])
-		inputCheck(_windows[1])
+		printFiles(_files, _windows[2])
+		inputCheck(_windows[2])
 
 def inputCheck(screen):
 	global _cursorPos
@@ -101,34 +101,47 @@ def printFiles(files, window):
 
 def screenLayout():
 	global _windows
+	global _path
 	curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
 	heightRemaining = curses.LINES
 
 	# Title bar
-	title_x = 0
-	title_y = 0
 	title_h = 1
-	title = "MedCurses"
+	title = "MedCurses        ROM path: {}".format(_path)
 
-	titlebar = curses.newwin(title_h, curses.COLS, title_y, title_x)
+	titlebar = curses.newwin(title_h, curses.COLS, 0, 0)
 
 	titlebar.bkgd(' ', curses.color_pair(1))
 	titlebar.addstr(0, center(title), title)
 
+	titlebar.noutrefresh()
 	_windows.append(titlebar)
-	refreshOne(titlebar)
 
-	# File list
-	filelist = curses.newwin(curses.LINES - title_h, curses.COLS, 2, 0)
-	filelist.keypad(True)
-	
-	_windows.append(filelist)
 
 	# Instructions
+	instruct_y = curses.LINES - 1
+	instruct_h = 1
+	instructStr = "Enter: Run Selected ROM        Up/Down: Select ROM        ESC: Return to Terminal"
+	instructWin = curses.newwin(instruct_h, curses.COLS, instruct_y, 0)
+	instructWin.addstr(0, center(instructStr), instructStr)
 	
+	instructWin.noutrefresh()
+	_windows.append(instructWin)
+	
+
+	# Filelist
+	filelist_y = 2
+	filelist_h = curses.LINES - title_h - instruct_h - 1
+	filelist = curses.newwin(filelist_h, curses.COLS, filelist_y, 0)
+	filelist.keypad(True)
+
+	_windows.append(filelist)
+
 
 	# Directory Input
 	# TODO
+
+	curses.doupdate()
 
 def center(string):
 	return (curses.COLS // 2) - (len(string) // 2)
@@ -136,7 +149,8 @@ def center(string):
 def refreshAll():
 	global _windows
 	for window in _windows:
-		window.refresh()
+		window.noutrefresh()
+	curses.doupdate()
 
 def refreshOne(window):
 	window.noutrefresh()
